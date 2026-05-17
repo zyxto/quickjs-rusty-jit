@@ -54,7 +54,7 @@ impl Context {
     ///
     /// ```rust
     /// let _context = quickjs_rusty::Context::builder()
-    ///     .memory_limit(100_000)
+    ///     .memory_limit(1_000_000)
     ///     .build()
     ///     .unwrap();
     /// ```
