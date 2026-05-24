@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.11.0 (2026-05-25)
 
 Upgrade quickjs-ng to v0.15.0.
 
@@ -13,7 +13,7 @@ Upgrade quickjs-ng to v0.15.0.
 
 <csr-read-only-do-not-edit/>
 
- - 2 commits contributed to the release over the course of 7 calendar days.
+ - 3 commits contributed to the release over the course of 7 calendar days.
  - 64 days passed between releases.
  - 0 commits were understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' were seen in commit messages
@@ -25,6 +25,7 @@ Upgrade quickjs-ng to v0.15.0.
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Update changelog ([`df08d4f`](https://github.com/Icemic/quickjs-rusty/commit/df08d4fdc0e947bbcfb7020c4c45671bbbfbc432))
     - Update quickjs-ng to v0.15.0 ([`0d92c3f`](https://github.com/Icemic/quickjs-rusty/commit/0d92c3fb901e87651c292dbc912906b05621aeec))
     - Upgrade to latest quickjs-ng ([`6f2ce58`](https://github.com/Icemic/quickjs-rusty/commit/6f2ce58098892d5063f3b1222d393c358335538b))
 </details>
