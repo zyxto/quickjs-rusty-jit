@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Bug Fixes
+
+ - <csr-id-de21dfaf4b6aae275659f877f25b80c5330236e9/> update memory limit in Context builder example
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 1 commit contributed to the release over the course of 7 calendar days.
+ - 64 days passed between releases.
+ - 1 commit was understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' were seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Update memory limit in Context builder example ([`de21dfa`](https://github.com/Icemic/quickjs-rusty/commit/de21dfaf4b6aae275659f877f25b80c5330236e9))
+</details>
+
 ## 0.11.1 (2026-03-21)
 
 ### New Features

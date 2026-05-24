@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+Upgrade quickjs-ng to v0.15.0.
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 2 commits contributed to the release over the course of 7 calendar days.
+ - 64 days passed between releases.
+ - 0 commits were understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' were seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Update quickjs-ng to v0.15.0 ([`0d92c3f`](https://github.com/Icemic/quickjs-rusty/commit/0d92c3fb901e87651c292dbc912906b05621aeec))
+    - Upgrade to latest quickjs-ng ([`6f2ce58`](https://github.com/Icemic/quickjs-rusty/commit/6f2ce58098892d5063f3b1222d393c358335538b))
+</details>
+
 ## 0.10.1 (2026-03-21)
 
 Update quickjs-ng to latest master version.
@@ -13,7 +37,7 @@ Update quickjs-ng to latest master version.
 
 <csr-read-only-do-not-edit/>
 
- - 2 commits contributed to the release.
+ - 3 commits contributed to the release.
  - 47 days passed between releases.
  - 0 commits were understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' were seen in commit messages
@@ -25,6 +49,7 @@ Update quickjs-ng to latest master version.
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Release libquickjs-ng-sys v0.10.1, quickjs-rusty v0.11.1 ([`cdee822`](https://github.com/Icemic/quickjs-rusty/commit/cdee822a1f5094550deb660f42b19683e866b909))
     - Fix changelog ([`2d9e850`](https://github.com/Icemic/quickjs-rusty/commit/2d9e850887174e1f9bea854c49511b96489f7b7c))
     - Update quickjs-ng ([`b0a597e`](https://github.com/Icemic/quickjs-rusty/commit/b0a597ea6c586456b92f8fcac27369aeba59695c))
 </details>
