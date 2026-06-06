@@ -166,7 +166,15 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        let current = self.get_current();
+        let raw_current = self.get_current();
+        let current_proxy;
+
+        let current = if raw_current.is_proxy() {
+            current_proxy = Some(raw_current.get_proxy_target(true)?);
+            current_proxy.as_ref().unwrap()
+        } else {
+            raw_current
+        };
 
         match current.tag() {
             JsTag::Undefined => visitor.visit_unit(),

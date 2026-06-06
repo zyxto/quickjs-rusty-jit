@@ -457,3 +457,20 @@ enum SimpleEnum {
     D(bool, u32),
     Foo(Bar),
 }
+
+#[test]
+fn serde_de_proxy() {
+    let script = r#"
+    const obj = [123, 456]
+    new Proxy(obj, {
+        get(target, prop) {
+            return target[prop];
+        }
+    })
+    "#;
+    let context = Context::builder().build().unwrap();
+    let proxy = context.eval(script, false).unwrap();
+    let result: serde_json::Value = from_js(unsafe { context.context_raw() }, &proxy).unwrap();
+    let json_str = serde_json::to_string(&result).unwrap();
+    assert_eq!(json_str, r#"[123,456]"#);
+}
