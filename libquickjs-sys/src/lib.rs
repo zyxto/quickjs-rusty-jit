@@ -10,6 +10,8 @@
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 pub mod interpreter;
+pub mod compiler;
+pub mod register_interpreter;
 
 #[cfg(test)]
 mod tests {

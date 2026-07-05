@@ -1,3 +1,4 @@
+#![allow(unused_assignments)]
 use crate as q;
 
 // Opcode constants

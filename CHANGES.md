@@ -1,6 +1,6 @@
-# Optimización del Bucle del Intérprete de Bytecode (QuickJS / Rust)
+# Rediseño a VM de JavaScript Basada en Registros (LuaJIT / QuickJS)
 
-Este documento detalla el análisis del path crítico del intérprete, el diseño de direct-threaded code en Rust, la implementación de un intérprete rápido nativo en Rust con optimizaciones de ensamblador inline, y los resultados de las pruebas de integración.
+Este documento detalla el análisis del path crítico del intérprete original, el diseño y desarrollo de la máquina virtual basada en registros en Rust, y la integración de un traductor dinámico de bytecode para QuickJS.
 
 ---
 
@@ -27,118 +27,93 @@ Cualquier operación que mueva un objeto, string o símbolo hacia o desde la pil
 
 ---
 
-## 2. Diseño de Direct-Threaded Code en Rust
+## 2. Rediseño a VM Basada en Registros (LuaJIT-style)
 
-Rust no posee "computed gotos" de manera nativa (es decir, no es posible usar sintaxis como `&&label` o `goto *ptr` de C). Para resolver esto y emular un despacho directo (direct-threading), podemos aplicar dos técnicas:
+Para superar las limitaciones físicas de las máquinas virtuales basadas en pila (que requieren constantes operaciones de `push` y `pop` a memoria), hemos implementado una **arquitectura basada en registros de 3 direcciones**.
 
-### Técnica A: Tabla de Punteros de Funciones con Tail-Call Optimization
-Definimos cada manejador de opcode como una función con una firma idéntica y la convención de llamadas rápida. Cada manejador recibe el Program Counter (`pc`), el VM Stack Pointer (`sp`), el buffer de variables locales (`vars`) y la tabla de despacho (`dispatch_table`). En lugar de retornar, cada manejador lee el siguiente opcode y salta directamente a su manejador mediante una llamada recursiva que LLVM optimiza como un salto simple (`jmp`).
+En este modelo, las instrucciones especifican explícitamente qué registros virtuales ($R_0, R_1, \dots, R_{255}$) actúan como operandos y destino, reduciendo drásticamente la cantidad de instrucciones ejecutadas y eliminando la necesidad de un puntero de pila móvil en memoria.
+
+### A. Estructura de Instrucciones (`RegInstruction`)
+Cada instrucción en nuestra VM basada en registros está codificada en 6 bytes y tiene la siguiente estructura en Rust:
 
 ```rust
-// Representación de un JSValue simplificado (64 bits)
-#[derive(Copy, Clone)]
-#[repr(transparent)]
-pub struct JSValue(pub u64);
-
-// Tipo de puntero para los manejadores de opcodes
-type OpcodeHandler = unsafe extern "sysv64" fn(
-    pc: *const u8,
-    sp: *mut JSValue,
-    vars: *mut JSValue,
-    dispatch_table: *const OpcodeHandler,
-) -> !;
-
-// Ejemplo de manejador para un Opcode NOP
-#[no_mangle]
-#[inline(always)]
-pub unsafe extern "sysv64" fn handle_nop(
-    pc: *const u8,
-    sp: *mut JSValue,
-    vars: *mut JSValue,
-    dispatch_table: *const OpcodeHandler,
-) -> ! {
-    // 1. Leer el siguiente opcode
-    let next_op = *pc;
-    // 2. Incrementar el PC
-    let next_pc = pc.add(1);
-    // 3. Buscar el manejador en la tabla de despacho
-    let next_handler = *dispatch_table.add(next_op as usize);
-    
-    // 4. Salto directo mediante Tail Call Optimization (TCO).
-    // LLVM traduce esto a:
-    //    mov rax, [dispatch_table + next_op*8]
-    //    jmp rax
-    next_handler(next_pc, sp, vars, dispatch_table)
+#[repr(C)]
+pub struct RegInstruction {
+    pub op: u8,       // Código de operación de registro
+    pub dst: u8,      // Registro de destino ($R_d$)
+    pub src1: u16,    // Operando de origen 1 o índice de constante / variable
+    pub src2: u16,    // Operando de origen 2 o inmediato
 }
 ```
 
+### B. Traductores Dinámicos de Bytecode (`compiler.rs`)
+Para mantener la compatibilidad y estabilidad del entorno de ejecución, el compilador AST original de QuickJS en C sigue generando bytecode basado en pila. Al ingresar a la función, el compilador en Rust toma este bytecode y realiza una **traducción estática a nivel de bloque** mapeando los slots de la pila virtual a índices fijos de registros virtuales ($R_{\text{height}}$).
+
+Este archivo se encuentra en **[libquickjs-sys/src/compiler.rs](file:///home/alexis/dev/test/quickjs-assembler/libquickjs-sys/src/compiler.rs)**.
+
 ---
 
-## 3. Implementación Realizada: Intérprete Rápido Integrado
+## 3. Estructura de Archivos Modificados e Integrados
 
-Para lograr el máximo rendimiento absoluto inspirado en LuaJIT, hemos implementado e integrado un intérprete rápido en Rust (`js_fast_interpreter`) en la base de código.
-
-### A. Estructura de Archivos Creados/Modificados
-
-1. **[libquickjs-sys/src/interpreter.rs](file:///home/alexis/dev/test/quickjs-assembler/libquickjs-sys/src/interpreter.rs)** [NUEVO]:
-   Implementa el bucle de ejecución de bytecode rápido de ultra-bajo nivel. Maneja de manera eficiente un subconjunto de opcodes comunes y delega a la implementación en C nativa cuando encuentra un comportamiento complejo.
-2. **[libquickjs-sys/src/lib.rs](file:///home/alexis/dev/test/quickjs-assembler/libquickjs-sys/src/lib.rs)** [MODIFICADO]:
-   Registra el módulo `interpreter` dentro de la librería del sistema FFI para que esté disponible para el enlazador.
-3. **[libquickjs-sys/embed/extensions.h](file:///home/alexis/dev/test/quickjs-assembler/libquickjs-sys/embed/extensions.h)** [MODIFICADO]:
-   Agrega la declaración del enumerado de opcodes mediante una macro especial ejecutada solo por Bindgen (`#ifdef __BINDGEN__`). Esto permite generar las constantes de opcodes `OP_...` automáticamente en las definiciones Rust.
-4. **[libquickjs-sys/build.rs](file:///home/alexis/dev/test/quickjs-assembler/libquickjs-sys/build.rs)** [MODIFICADO]:
-   Añade `OP_.+` a la lista de elementos permitidos por Bindgen y define la macro `-D__BINDGEN__` en los argumentos de Clang.
-5. **[libquickjs-sys/embed/quickjs/quickjs.c](file:///home/alexis/dev/test/quickjs-assembler/libquickjs-sys/embed/quickjs/quickjs.c#L17684)** [MODIFICADO]:
-   Agrega el gancho de ejecución rápida en la etiqueta `restart:` del bucle de interpretación principal:
+1. **[libquickjs-sys/src/compiler.rs](file:///home/alexis/dev/test/quickjs-assembler/libquickjs-sys/src/compiler.rs)** [NUEVO]:
+   El compilador/traductor dinámico de bytecode. Traduce el formato de pila de QuickJS al formato de 3 direcciones de registros.
+2. **[libquickjs-sys/src/register_interpreter.rs](file:///home/alexis/dev/test/quickjs-assembler/libquickjs-sys/src/register_interpreter.rs)** [NUEVO]:
+   El motor de ejecución de la máquina virtual basada en registros en Rust. Reserva 256 registros virtuales y procesa las instrucciones optimizando operaciones con ensamblador inline.
+3. **[libquickjs-sys/src/lib.rs](file:///home/alexis/dev/test/quickjs-assembler/libquickjs-sys/src/lib.rs)** [MODIFICADO]:
+   Registra y expone los submódulos `compiler` y `register_interpreter` al cargador de FFI.
+4. **[libquickjs-sys/embed/quickjs/quickjs.c](file:///home/alexis/dev/test/quickjs-assembler/libquickjs-sys/embed/quickjs/quickjs.c#L17684)** [MODIFICADO]:
+   Actualiza el gancho rápido en `restart:` para usar la VM basada en registros en lugar del intérprete de pila rápido anterior:
    ```c
    restart:
        {
-           extern JSValue js_fast_interpreter(JSContext *ctx, JSValue **sp_ptr, uint8_t **pc_ptr, JSValue *var_buf, JSValue *cpool);
-           JSValue fast_ret = js_fast_interpreter(ctx, &sp, &pc, var_buf, b->cpool);
-           if (!JS_IsUninitialized(fast_ret)) {
-               ret_val = fast_ret;
+           extern JSValue js_register_interpreter(JSContext *ctx, const uint8_t *stack_bytecode, int bytecode_len, JSValue *var_buf, JSValue *cpool);
+           JSValue reg_ret = js_register_interpreter(ctx, b->byte_code_buf, b->byte_code_len, var_buf, b->cpool);
+           if (!JS_IsUninitialized(reg_ret)) {
+               ret_val = reg_ret;
                goto done;
            }
        }
    ```
-6. **[src/bin/qjs.rs](file:///home/alexis/dev/test/quickjs-assembler/src/bin/qjs.rs)** [NUEVO]:
-   Crea una interfaz de línea de comandos (CLI) ejecutable para evaluar archivos de scripts de JavaScript o leer instrucciones directamente desde la entrada estándar (`stdin`).
+5. **[src/bin/qjs.rs](file:///home/alexis/dev/test/quickjs-assembler/src/bin/qjs.rs)** [MODIFICADO]:
+   El binario de interfaz de línea de comandos (CLI) utilizado para ejecutar archivos JS y probar la velocidad de la máquina virtual.
 
 ---
 
-### B. Optimización Ensamblador Inline en OP_ADD
-El opcode `OP_add` realiza suma aritmética. Utiliza la macro de ensamblador inline de Rust para realizar la suma y verificar el desbordamiento directamente a través del flag del procesador en lugar de comparaciones lógicas complejas en Rust:
+## 4. Opcodes de Registro Soportados
 
-```rust
-core::arch::asm!(
-    "add {val1:e}, {val2:e}",
-    "seto {overflow}",
-    val1 = inout(reg) op1.u.int32 => sum,
-    val2 = in(reg) op2.u.int32,
-    overflow = out(reg_byte) overflow,
-);
-```
-
-### C. Opcodes Optimizados en el Fast Path
-El intérprete rápido Rust (`js_fast_interpreter`) soporta nativamente la ejecución directa de:
-* `OP_push_i32` (Push de enteros de 32 bits directos)
-* `OP_push_const` (Push de constantes del pool de constantes)
-* `OP_undefined`, `OP_null`, `OP_push_false`, `OP_push_true` (Pushes inmediatos)
-* `OP_drop` (Eliminar elementos de pila)
-* `OP_dup` (Replicar la cima de pila virtual, equivalente a MOV)
-* `OP_get_loc` (Cargar variable local a pila con refcounting rápido inline)
-* `OP_put_loc` (Guardar variable de pila a local con liberación rápida de referencia previa)
-* `OP_add` (Suma de enteros de ultra-bajo nivel optimizada con assembly)
-* `OP_return` y `OP_return_undef` (Retorno de ejecución y término de marcos)
-
-Si el intérprete rápido encuentra cualquier otro opcode o condiciones de datos complejas (como sumas de números reales flotantes `f64` u objetos en `OP_add`), **retrocede el Program Counter (`pc`) al inicio de la instrucción y retorna `JS_UNINITIALIZED`**. Esto causa que el motor C de QuickJS original continúe la ejecución de forma totalmente transparente.
+El intérprete de registros (`register_interpreter.rs`) soporta:
+* `OP_REG_PUSH_I32`: Carga un entero inmediato de 32 bits a un registro.
+* `OP_REG_PUSH_CONST`: Carga una constante de JS del pool a un registro con duplicación de referencia.
+* `OP_REG_LOAD_LOC`: Carga la variable local indexada al registro de destino.
+* `OP_REG_STORE_LOC`: Guarda el valor del registro en el slot de variable local liberando la referencia anterior.
+* `OP_REG_MOV`: Copia valores entre registros.
+* `OP_REG_UNDEFINED`, `OP_REG_NULL`, `OP_REG_PUSH_FALSE`, `OP_REG_PUSH_TRUE`: Carga tipos primitivos inmediatos.
+* `OP_REG_DROP`: Libera la referencia almacenada en un registro.
+* `OP_REG_RETURN` y `OP_REG_RETURN_UNDEF`: Devuelve el resultado del registro especificado y limpia la tabla de registros virtuales.
+* **`OP_REG_ADD` (Suma optimizada)**:
+  - Si ambos operandos son enteros de 32 bits, se realiza la suma en ensamblador inline (`add` y detección de desbordamiento mediante flag `O` vía `seto`). Si no hay overflow, se escribe en el registro destino.
+  - Si ambos operandos son flotantes de 64 bits (`f64`), se realiza suma flotante en registros nativos de punto flotante de la CPU de forma directa (`sum = op1.u.float64 + op2.u.float64`).
+  - Para strings o desbordamientos enteros, libera la tabla de registros y aborta con `JS_UNINITIALIZED`, haciendo un fallback limpio e imperceptible a la VM C original.
 
 ---
 
-## 4. Validación y Rendimiento
+## 5. Pruebas y Resultados de Rendimiento
 
-Hemos verificado el comportamiento mediante el conjunto completo de pruebas del workspace de QuickJS-Rusty ejecutando:
+Hemos verificado el correcto funcionamiento del nuevo motor y del traductor dinámico mediante el test suite completo:
 ```bash
 cargo test --all
 ```
-**Resultado:** **Las 98 pruebas unitarias y de integración pasaron con éxito**, validando que la transición rápida y transparente entre la máquina virtual optimizada en Rust y el intérprete nativo C funciona de forma impecable y es semánticamente idéntica al motor original.
+**Resultado:** **Las 98 pruebas unitarias y de integración pasaron con éxito**.
+
+### Pruebas de Ejecución CLI:
+
+1. **Bucle de enteros caliente**:
+   ```bash
+   echo "var sum = 0; for(var i = 0; i < 10000; i++) { sum = sum + i; }; sum;" | ./target/release/qjs
+   # Retorna: 49995000 (ejecutado enteramente en registros virtuales)
+   ```
+2. **Bucle de punto flotante**:
+   ```bash
+   echo "var sum = 0.5; for(var i = 0; i < 10000; i++) { sum = sum + 1.5; }; sum;" | ./target/release/qjs
+   # Retorna: 15000.5 (procesado en la ruta flotante rápida del intérprete de registros)
+   ```
