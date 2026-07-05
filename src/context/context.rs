@@ -62,6 +62,12 @@ impl Context {
         ContextBuilder::new()
     }
 
+    /// Exposes the raw pointer to the underlying QuickJS JSContext.
+    #[inline]
+    pub fn raw_context(&self) -> *mut q::JSContext {
+        self.context
+    }
+
     /// Initialize a wrapper by creating a JSRuntime and JSContext.
     pub fn new(memory_limit: Option<usize>) -> Result<Self, ContextError> {
         let runtime = unsafe { q::JS_NewRuntime() };
