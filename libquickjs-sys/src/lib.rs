@@ -12,6 +12,7 @@ include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 pub mod interpreter;
 pub mod compiler;
 pub mod register_interpreter;
+pub mod jit;
 
 #[cfg(test)]
 mod tests {
@@ -50,5 +51,11 @@ mod tests {
             let bval = JS_Ext_NewBool(ctx, 1);
             assert_eq!(JS_Ext_ValueGetTag(bval), JS_TAG_BOOL);
         }
+    }
+
+    #[test]
+    fn test_layout() {
+        println!("RUST JSValue size: {}", std::mem::size_of::<JSValue>());
+        println!("RUST JSValue align: {}", std::mem::align_of::<JSValue>());
     }
 }
