@@ -8,3 +8,16 @@
 04-bitwise-hash.js > NODE 43ms BUN 44ms QJS 1569ms
 2026-07-05 09:56:43 +0000
 05-branchy-modulo.js > NODE 71ms BUN 83ms QJS 1412ms
+
+2026-07-05 10:50:04 +0000
+01-counted-constant.js > NODE 142.3012ms BUN 88.7234ms QJS 0.0107ms
+2026-07-05 10:50:04 +0000
+02-induction-sum.js > NODE 29.4891ms BUN 37.0730ms QJS 0.0106ms
+2026-07-05 10:50:04 +0000
+03-affine-mix.js > NODE 49.4824ms BUN 63.7895ms QJS 0.0113ms
+2026-07-05 10:50:04 +0000
+04-bitwise-hash.js > NODE 45.4783ms BUN 46.9379ms QJS 37.6667ms
+2026-07-05 10:50:05 +0000
+05-branchy-modulo.js > NODE 74.9730ms BUN 101.7059ms QJS 0.0158ms
+2026-07-05 10:50:05 +0000
+06-fibonacci.js > NODE 113.9540ms BUN 139.7607ms QJS 396.6530ms

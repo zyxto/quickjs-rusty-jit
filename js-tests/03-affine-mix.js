@@ -1,9 +1,6 @@
 // Affine arithmetic over the induction variable: sum += i * C + K.
 // This is the next useful recognizer target after constant and direct induction sums.
 
-function nowMs() {
-  return Date.now();
-}
 
 function run() {
   var sum = 0;
@@ -13,9 +10,9 @@ function run() {
   return sum;
 }
 
-var t0 = nowMs();
+var t0 = performance.now();
 var result = run();
-var t1 = nowMs();
+var t1 = performance.now();
 
 console.log("RESULT", result);
-console.log("TIME_MS", t1 - t0);
+console.log("TIME_MS", (t1 - t0).toFixed(4));
