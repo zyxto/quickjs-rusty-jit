@@ -78,7 +78,9 @@ fn do_bindgen() {
         .header("embed/extensions.h")
         .allowlist_item("js_.+")
         .allowlist_item("JS.+")
+        .allowlist_item("OP_.+")
         .clang_arg("-std=c11")
+        .clang_arg("-D__BINDGEN__")
         .clang_arg(format!("-I{}", "embed/quickjs"));
 
     // detect if we are cross-compiling for android using cargo-ndk

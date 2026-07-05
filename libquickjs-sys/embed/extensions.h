@@ -3,6 +3,18 @@
 #ifndef RUSTY_EXTENSION_H
 #define RUSTY_EXTENSION_H
 
+#ifdef __BINDGEN__
+enum {
+#define FMT(f)
+#define DEF(id, size, n_pop, n_push, f) OP_ ## id,
+#define def(id, size, n_pop, n_push, f)
+#include "./quickjs/quickjs-opcode.h"
+#undef def
+#undef DEF
+#undef FMT
+};
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {

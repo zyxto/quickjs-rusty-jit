@@ -9,6 +9,8 @@
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
+pub mod interpreter;
+
 #[cfg(test)]
 mod tests {
     use std::ffi::CStr;
