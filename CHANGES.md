@@ -101,6 +101,8 @@ Para lograr el máximo rendimiento absoluto inspirado en LuaJIT, hemos implement
            }
        }
    ```
+6. **[src/bin/qjs.rs](file:///home/alexis/dev/test/quickjs-assembler/src/bin/qjs.rs)** [NUEVO]:
+   Crea una interfaz de línea de comandos (CLI) ejecutable para evaluar archivos de scripts de JavaScript o leer instrucciones directamente desde la entrada estándar (`stdin`).
 
 ---
 
