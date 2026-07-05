@@ -29,6 +29,16 @@ pub const OP_REG_IF_FALSE: u8 = 18;
 pub const OP_REG_IF_TRUE: u8 = 19;
 pub const OP_REG_JMP: u8 = 20;
 pub const OP_REG_SET_LOC: u8 = 21;
+pub const OP_REG_MUL: u8 = 22;
+pub const OP_REG_SUB: u8 = 23;
+pub const OP_REG_MOD: u8 = 24;
+pub const OP_REG_SHL: u8 = 25;
+pub const OP_REG_SAR: u8 = 26;
+pub const OP_REG_SHR: u8 = 27;
+pub const OP_REG_BIT_AND: u8 = 28;
+pub const OP_REG_BIT_XOR: u8 = 29;
+pub const OP_REG_BIT_OR: u8 = 30;
+pub const OP_REG_STRICT_EQ: u8 = 31;
 
 // Stack-based opcode values from QuickJS
 const OP_PUSH_I32: u8 = 1;
@@ -66,11 +76,21 @@ const OP_SET_LOC0: u8 = 211;
 const OP_SET_LOC3: u8 = 214;
 const OP_IF_TRUE: u8 = 105;
 const OP_GOTO: u8 = 106;
+const OP_MUL: u8 = 153;
+const OP_MOD: u8 = 155;
 const OP_ADD: u8 = 156;
+const OP_SUB: u8 = 157;
+const OP_SHL: u8 = 158;
+const OP_SAR: u8 = 159;
+const OP_SHR: u8 = 160;
+const OP_AND: u8 = 161;
+const OP_XOR: u8 = 162;
+const OP_OR: u8 = 163;
 const OP_LT: u8 = 165;
 const OP_LTE: u8 = 166;
 const OP_GT: u8 = 167;
 const OP_GTE: u8 = 168;
+const OP_STRICT_EQ: u8 = 173;
 const OP_IF_FALSE8: u8 = 240;
 const OP_IF_TRUE8: u8 = 241;
 const OP_GOTO8: u8 = 242;
@@ -473,15 +493,29 @@ pub fn compile_bytecode(bytecode: &[u8]) -> Result<Vec<RegInstruction>, &'static
                 });
                 pc += 2;
             }
-            OP_ADD => {
+            OP_MUL | OP_MOD | OP_ADD | OP_SUB | OP_SHL | OP_SAR | OP_SHR | OP_AND | OP_XOR
+            | OP_OR | OP_STRICT_EQ => {
                 if stack_height < 2 {
-                    return Err("Stack underflow on OP_add");
+                    return Err("Stack underflow on binary arithmetic");
                 }
                 let src1 = (stack_height - 2) as u16;
                 let src2 = (stack_height - 1) as u16;
                 stack_height -= 1;
+                let reg_op = match opcode {
+                    OP_MUL => OP_REG_MUL,
+                    OP_MOD => OP_REG_MOD,
+                    OP_ADD => OP_REG_ADD,
+                    OP_SUB => OP_REG_SUB,
+                    OP_SHL => OP_REG_SHL,
+                    OP_SAR => OP_REG_SAR,
+                    OP_SHR => OP_REG_SHR,
+                    OP_AND => OP_REG_BIT_AND,
+                    OP_XOR => OP_REG_BIT_XOR,
+                    OP_OR => OP_REG_BIT_OR,
+                    _ => OP_REG_STRICT_EQ,
+                };
                 reg_instructions.push(RegInstruction {
-                    op: OP_REG_ADD,
+                    op: reg_op,
                     dst: (stack_height - 1) as u8,
                     src1,
                     src2,

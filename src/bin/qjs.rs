@@ -1,9 +1,9 @@
+use libquickjs_ng_sys as q;
+use quickjs_rusty::Context;
 use std::env;
 use std::ffi::{CStr, CString};
 use std::fs;
 use std::io::{self, Read};
-use quickjs_rusty::Context;
-use libquickjs_ng_sys as q;
 
 // Native, highly optimized logging function.
 // Bypasses all Rust argument wrapping, JSON serialization, and intermediate vector copies.
@@ -50,7 +50,9 @@ fn main() {
         // Read from stdin
         let mut buffer = String::new();
         let mut stdin = io::stdin();
-        stdin.read_to_string(&mut buffer).expect("Error reading from stdin");
+        stdin
+            .read_to_string(&mut buffer)
+            .expect("Error reading from stdin");
         buffer
     } else {
         // Read from file path
